@@ -1,0 +1,13 @@
+﻿@model AboutViewModel
+
+<section class="hero p-5 text-center">
+    <div class="container">
+        <h1 class="display-4">@Model.title</h1>
+        <p class="lead">@Model.description</p>
+
+        <blockquote class="blockquote mt-4">
+            <p>"@Model.quote"</p>
+            <footer class="blockquote-footer">@Model.quoteAuthor</footer>
+        </blockquote>
+    </div>
+</section>
