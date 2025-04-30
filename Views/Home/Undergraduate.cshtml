@@ -1,0 +1,181 @@
+﻿@model UndergraduateViewModel
+
+@*
+/// <summary>
+/// Undergraduate view displays information about undergraduate programs at the iSchool.
+/// This view uses the UndergraduateViewModel to render program details, requirements,
+/// course offerings, and other relevant information for prospective and current students.
+/// </summary>
+/// <remarks>
+/// The UndergraduateViewModel is expected to contain:
+/// - Program descriptions and requirements
+/// - Course information and prerequisites
+/// - Academic pathways and specializations
+/// - Admission requirements and procedures
+/// - Career opportunities for graduates
+/// </remarks>
+*@
+
+<div class="container mt-4">
+    <h1 class="display-4 mb-4">Undergraduate Programs</h1>
+
+    <div class="degree-accordion">
+        @foreach (var degree in Model.undergraduate)
+        {
+            <div class="degree-section">
+                <h3>@degree.degreeName</h3>
+                <div class="degree-content">
+                    <div class="degree-header mb-4">
+                        <h2>@degree.title</h2>
+                        <div class="degree-description">
+                            @degree.description
+                        </div>
+                    </div>
+
+                    <div class="concentrations-section">
+                        <h4>Concentrations</h4>
+                        <div class="concentration-tabs">
+                            <ul>
+                                @for (int i = 0; i < degree.concentrations.Length; i++)
+                                {
+                                    <li><a href="#@GetConcentrationId(degree.degreeName, i)">@degree.concentrations[i]</a></li>
+                                }
+                            </ul>
+
+                            @for (int i = 0; i < degree.concentrations.Length; i++)
+                            {
+                                <div id="@GetConcentrationId(degree.degreeName, i)" class="concentration-content">
+                                    <div class="concentration-card">
+                                        <h5>@degree.concentrations[i]</h5>
+                                        <div class="concentration-details">
+                                            <p>This concentration focuses on specialized knowledge and skills in @degree.concentrations[i].</p>
+
+                                            <div class="ui-progressbar" id="progress-@GetConcentrationId(degree.degreeName, i)"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="degree-info-buttons mt-4">
+                        <button class="btn btn-primary degree-info-btn" data-dialog="apply-@GetSafeId(degree.degreeName)">
+                            How to Apply
+                        </button>
+                        <button class="btn btn-info degree-info-btn" data-dialog="curriculum-@GetSafeId(degree.degreeName)">
+                            Curriculum
+                        </button>
+                        <button class="btn btn-success degree-info-btn" data-dialog="outcomes-@GetSafeId(degree.degreeName)">
+                            Career Outcomes
+                        </button>
+                    </div>
+
+                    <!-- Hidden dialogs -->
+                    <div id="apply-@GetSafeId(degree.degreeName)" class="dialog-content" title="How to Apply - @degree.degreeName">
+                        <p>The application process for @degree.degreeName includes:</p>
+                        <ul>
+                            <li>Submit online application</li>
+                            <li>Provide transcripts</li>
+                            <li>Letters of recommendation</li>
+                            <li>Statement of purpose</li>
+                        </ul>
+                        <p>Applications are accepted on a rolling basis.</p>
+                    </div>
+
+                    <div id="curriculum-@GetSafeId(degree.degreeName)" class="dialog-content" title="Curriculum - @degree.degreeName">
+                        <p>The @degree.degreeName curriculum includes core courses and specialized concentration courses.</p>
+                        <h5>Sample Courses:</h5>
+                        <ul>
+                            <li>Introduction to @degree.degreeName</li>
+                            <li>Advanced Research Methods</li>
+                            <li>Professional Development</li>
+                            <li>Concentration-specific coursework</li>
+                        </ul>
+                    </div>
+
+                    <div id="outcomes-@GetSafeId(degree.degreeName)" class="dialog-content" title="Career Outcomes - @degree.degreeName">
+                        <p>Graduates of the @degree.degreeName program have successfully pursued careers in:</p>
+                        <ul>
+                            <li>Industry positions</li>
+                            <li>Research organizations</li>
+                            <li>Government agencies</li>
+                            <li>Entrepreneurial ventures</li>
+                        </ul>
+                        <p>See our Employment Table for specific employment information.</p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@functions {
+    public string GetSafeId(string text)
+    {
+        return text.Replace(" ", "-").Replace(".", "").ToLower();
+    }
+
+    public string GetConcentrationId(string degreeName, int index)
+    {
+        return $"concentration-{GetSafeId(degreeName)}-{index}";
+    }
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize accordion
+            $(".degree-accordion").accordion({
+                header: "> div > h3",
+                heightStyle: "content",
+                collapsible: true,
+                active: false
+            });
+
+            // Initialize tabs
+            $(".concentration-tabs").tabs({
+                activate: function(event, ui) {
+                    // Initialize progress bar on tab activation
+                    var progressId = $(ui.newPanel).find('.ui-progressbar').attr('id');
+                    if (progressId) {
+                        var randomValue = Math.floor(Math.random() * 41) + 60; // Random value between 60-100
+                        $('#' + progressId).progressbar({
+                            value: randomValue
+                        });
+                    }
+                }
+            });
+
+            // Initialize dialog boxes
+            $(".dialog-content").each(function() {
+                $(this).dialog({
+                    autoOpen: false,
+                    modal: true,
+                    width: 500,
+                    buttons: {
+                        Close: function() {
+                            $(this).dialog("close");
+                        }
+                    }
+                });
+            });
+
+            // Dialog open buttons
+            $(".degree-info-btn").on("click", function() {
+                var dialogId = $(this).data("dialog");
+                $("#" + dialogId).dialog("open");
+            });
+
+            // Initialize first tab progress bar
+            $('.concentration-tabs').each(function() {
+                var firstTabId = $(this).find('.concentration-content:first .ui-progressbar').attr('id');
+                if (firstTabId) {
+                    var randomValue = Math.floor(Math.random() * 41) + 60;
+                    $('#' + firstTabId).progressbar({
+                        value: randomValue
+                    });
+                }
+            });
+        });
+    </script>
+}

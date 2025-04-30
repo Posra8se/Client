@@ -1,0 +1,115 @@
+﻿@model FacultyViewModel
+
+@*
+/// <summary>
+/// Faculty view displays information about faculty members of the iSchool.
+/// This view uses the FacultyViewModel to render faculty profiles, including their information,
+/// publications, and research interests.
+/// </summary>
+/// <remarks>
+/// The FacultyViewModel is expected to contain:
+/// - A collection of faculty members
+/// - Details such as name, title, email, office, and research areas for each faculty member
+/// - Optional profile images and publication lists
+/// </remarks>
+*@
+
+<div class="container mt-4">
+    <h1 class="display-4 mb-4">Our Faculty</h1>
+
+    <div class="faculty-tabs">
+        <ul>
+            @foreach (var faculty in Model.faculty)
+            {
+                <li><a href="#@faculty.username">@faculty.name</a></li>
+            }
+        </ul>
+
+        @foreach (var faculty in Model.faculty)
+        {
+            <div id="@faculty.username" class="faculty-panel">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="faculty-image mb-3">
+                            <img src="@faculty.imagePath" alt="@faculty.name" class="img-fluid rounded shadow"
+                                 onerror="this.src='/images/default-faculty.jpg';">
+                        </div>
+                        <div class="faculty-contact card p-3">
+                            <h5>Contact Information</h5>
+                            <p><strong>Office:</strong> @faculty.office</p>
+                            <p><strong>Phone:</strong> @faculty.phone</p>
+                            <p><strong>Email:</strong> <a href="mailto:@faculty.email">@faculty.email</a></p>
+
+                            <div class="faculty-social mt-2">
+                                @if (!string.IsNullOrEmpty(faculty.website))
+                                {
+                                    <a href="@faculty.website" class="btn btn-sm btn-outline-primary" target="_blank">
+                                        <i class="bi bi-globe"></i> Website
+                                    </a>
+                                }
+                                @if (!string.IsNullOrEmpty(faculty.twitter))
+                                {
+                                    <a href="@faculty.twitter" class="btn btn-sm btn-outline-info" target="_blank">
+                                        <i class="bi bi-twitter"></i> Twitter
+                                    </a>
+                                }
+                                @if (!string.IsNullOrEmpty(faculty.facebook))
+                                {
+                                    <a href="@faculty.facebook" class="btn btn-sm btn-outline-primary" target="_blank">
+                                        <i class="bi bi-facebook"></i> Facebook
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-9">
+                        <div class="faculty-details">
+                            <h2>@faculty.name</h2>
+                            <h4>@faculty.title</h4>
+                            <div class="faculty-tagline text-muted mb-3">@faculty.tagline</div>
+
+                            <div class="faculty-interest mt-4">
+                                <h5>Research & Interest Areas:</h5>
+                                <div class="p-3 bg-light rounded">@faculty.interestArea</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $(".faculty-tabs").tabs({
+                activate: function(event, ui) {
+                    // Smooth scroll to active tab
+                    $('html, body').animate({
+                        scrollTop: $(".faculty-tabs").offset().top - 100
+                    }, 500);
+                }
+            });
+
+            // Make panels accordion-like on mobile
+            function checkWidth() {
+                if ($(window).width() < 768) {
+                    $(".faculty-tabs").tabs("destroy").accordion({
+                        header: "> div > h2",
+                        heightStyle: "content"
+                    });
+                } else {
+                    // Reinitialize tabs if moving from mobile to desktop
+                    if ($(".faculty-tabs").hasClass("ui-accordion")) {
+                        $(".faculty-tabs").accordion("destroy").tabs();
+                    }
+                }
+            }
+
+            // Check on page load and resize
+            checkWidth();
+            $(window).resize(checkWidth);
+        });
+    </script>
+}

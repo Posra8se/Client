@@ -1,0 +1,447 @@
+﻿@model GraduateViewModel
+
+@*
+ * View: Graduate.cshtml
+ * 
+ * Purpose: Displays information about graduate programs offered by the school.
+ * 
+ * Features:
+ * - Tabbed interface to navigate between different graduate programs
+ * - Special handling for "graduate advanced certificates" section
+ * - Interactive elements including sortable concentrations and sliders
+ * - Application process information and tuition calculator
+ * 
+ * Note: This view handles a special case for "graduate advanced certificates"
+ * which has a different data structure from the regular graduate programs.
+ *@
+
+<div class="container mt-4">
+    <h1 class="display-4 mb-4">Graduate Programs</h1>
+
+    @if (Model != null && Model.graduate != null && Model.graduate.Length > 0)
+    {
+        <div id="graduate-programs-tabs">
+            <ul>
+                @foreach (var program in Model.graduate)
+                {
+                    <li><a href="#@GetSafeId(program.degreeName)">@program.degreeName</a></li>
+                }
+            </ul>
+
+            @foreach (var program in Model.graduate)
+            {
+                <div id="@GetSafeId(program.degreeName)" class="program-panel">
+                    @* Special handling for graduate advanced certificates *@
+                    @if (program.degreeName == "graduate advanced certificates")
+                    {
+                        <!-- Special layout for graduate advanced certificates -->
+                        <div class="program-header mb-4">
+                            <h2>Graduate Advanced Certificates</h2>
+                            <div class="program-description">
+                                Enhance your career with specialized graduate certificates.
+                            </div>
+                        </div>
+
+                        <div class="certificates-card card mt-4">
+                            <div class="card-header">
+                                <h4>Available Certificates</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="certificates-accordion">
+                                    @if (program.availableCertificates != null && program.availableCertificates.Length > 0)
+                                    {
+                                        @foreach (var certificate in program.availableCertificates)
+                                        {
+                                            <h5>@certificate</h5>
+                                            <div class="certificate-details">
+                                                <p>This certificate program provides specialized knowledge in @certificate.Replace(" Advanced certificate", "").Replace(" Advanced Cerificate", "").</p>
+                                                <div class="certificate-requirements">
+                                                    <h6>Requirements:</h6>
+                                                    <ul>
+                                                        <li>Complete required coursework</li>
+                                                        <li>Maintain minimum GPA</li>
+                                                        <li>Complete capstone project</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <p>No certificates available.</p>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        @* Regular graduate program display *@
+                        <div class="program-header mb-4">
+                            <h2>@program.title</h2>
+                            <div class="program-description">
+                                @program.description
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div class="concentrations-card card mb-4">
+                                    <div class="card-header">
+                                        <h4>Concentrations</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="concentration-sortable">
+                                            @if (program.concentrations != null && program.concentrations.Length > 0)
+                                            {
+                                                @foreach (var concentration in program.concentrations)
+                                                {
+                                                    <div class="concentration-item ui-state-default">
+                                                        <span class="ui-icon ui-icon-arrowthick-2-n-s"></span>
+                                                        @concentration
+                                                    </div>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <p>No concentrations available for this program.</p>
+                                            }
+                                        </div>
+                                        <div class="text-muted mt-3">
+                                            <small>Drag to reorder concentrations based on your interest</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="certificates-card card">
+                                    <div class="card-header">
+                                        <h4>Program Details</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="program-details-accordion">
+                                            <h5>Admission Requirements</h5>
+                                            <div>
+                                                <ul>
+                                                    <li>Bachelor's degree (or equivalent) from an accredited institution</li>
+                                                    <li>Minimum GPA of 3.0</li>
+                                                    <li>Statement of purpose</li>
+                                                    <li>Two letters of recommendation</li>
+                                                    <li>Current resume</li>
+                                                </ul>
+                                            </div>
+
+                                            <h5>Program Duration</h5>
+                                            <div>
+                                                <p>The program typically takes 2 years (4 semesters) to complete full-time, or 3-4 years part-time.</p>
+                                            </div>
+
+                                            <h5>Required Credits</h5>
+                                            <div>
+                                                <p>30-36 credit hours, depending on the concentration.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="program-application mt-5">
+                            <div class="card">
+                                <div class="card-header bg-primary text-white">
+                                    <h4>Application Process</h4>
+                                </div>
+                                <div class="card-body">
+                                    @* Application steps accordion *@
+                                    <div id="application-steps-@GetSafeId(program.degreeName)">
+                                        <div class="app-step">
+                                            <h5>Step 1: Review Program Requirements</h5>
+                                            <p>Carefully review all program requirements and prerequisites.</p>
+                                        </div>
+                                        <div class="app-step">
+                                            <h5>Step 2: Prepare Materials</h5>
+                                            <p>Gather transcripts, letters of recommendation, and statement of purpose.</p>
+                                        </div>
+                                        <div class="app-step">
+                                            <h5>Step 3: Submit Application</h5>
+                                            <p>Complete and submit the online application form by the deadline.</p>
+                                        </div>
+                                        <div class="app-step">
+                                            <h5>Step 4: Interview Process</h5>
+                                            <p>Selected candidates will be invited for interviews with faculty.</p>
+                                        </div>
+                                    </div>
+
+                                    @* Application deadline calendar *@
+                                    <div class="text-center mt-4">
+                                        <button class="btn btn-primary open-datepicker-btn" data-id="@GetSafeId(program.degreeName)">
+                                            Check Application Deadlines
+                                        </button>
+                                        <div id="deadline-datepicker-@GetSafeId(program.degreeName)" class="deadline-datepicker"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @* Tuition calculator section *@
+                        <div class="program-calculator mt-5 mb-5">
+                            <h4>Tuition Calculator</h4>
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label for="credits-@GetSafeId(program.degreeName)">Number of Credits:</label>
+                                                <div id="credits-slider-@GetSafeId(program.degreeName)" class="slider-range mb-2"></div>
+                                                <input type="text" id="credits-@GetSafeId(program.degreeName)" class="form-control" readonly>
+                                            </div>
+
+                                            <div class="form-check">
+                                                <input class="form-check-input tuition-option" type="radio"
+                                                       name="tuitionOption-@GetSafeId(program.degreeName)"
+                                                       id="inState-@GetSafeId(program.degreeName)"
+                                                       value="inState" checked>
+                                                <label class="form-check-label" for="inState-@GetSafeId(program.degreeName)">
+                                                    In-State Tuition
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input tuition-option" type="radio"
+                                                       name="tuitionOption-@GetSafeId(program.degreeName)"
+                                                       id="outState-@GetSafeId(program.degreeName)"
+                                                       value="outState">
+                                                <label class="form-check-label" for="outState-@GetSafeId(program.degreeName)">
+                                                    Out-of-State Tuition
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="tuition-result mt-4">
+                                                <div class="card bg-light">
+                                                    <div class="card-body">
+                                                        <h5>Estimated Tuition:</h5>
+                                                        <h3 id="tuition-amount-@GetSafeId(program.degreeName)" class="text-primary">$0</h3>
+                                                        <p class="text-muted">*Tuition estimates are approximate and subject to change</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <p>No graduate program information is currently available.</p>
+        </div>
+    }
+</div>
+
+@functions {
+    /// <summary>
+    /// Converts a given string into a safe ID for use in HTML element IDs.
+    /// </summary>
+    /// <param name="text">The text to convert to a safe ID.</param>
+    /// <returns>A string with spaces replaced by hyphens, periods removed, and converted to lowercase.</returns>
+    /// <remarks>
+    /// This function handles null or empty input by returning a default value.
+    /// It's used to generate IDs for tabs, accordions, and other interactive elements.
+    /// </remarks>
+    public string GetSafeId(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return "unknown-program";
+
+        return text.Replace(" ", "-").Replace(".", "").ToLower();
+    }
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize tabs if they exist
+            if ($("#graduate-programs-tabs").length) {
+                // Set up tabbed interface for program navigation
+                $("#graduate-programs-tabs").tabs({
+                    activate: function(event, ui) {
+                        // Reset and initialize components in the newly activated tab
+                        var panelId = ui.newPanel.attr('id');
+                        initPanelComponents(panelId);
+                    }
+                });
+
+                // Make concentration lists sortable with jQuery UI
+                $(".concentration-sortable").sortable({
+                    placeholder: "ui-state-highlight",
+                    update: function(event, ui) {
+                        // You could save the new order here if needed
+                        console.log("Concentration order updated");
+                    }
+                }).disableSelection();
+
+                // Set up accordion for certificates
+                $(".certificates-accordion").accordion({
+                    header: "> h5",
+                    collapsible: true,
+                    heightStyle: "content",
+                    active: false
+                });
+
+                // Set up accordion for program details
+                $(".program-details-accordion").accordion({
+                    header: "> h5",
+                    collapsible: true,
+                    heightStyle: "content",
+                    active: false
+                });
+
+                // Set up accordion for application steps
+                $("[id^='application-steps-']").accordion({
+                    header: "> div > h5",
+                    collapsible: true,
+                    heightStyle: "content"
+                });
+
+                // Initialize datepickers for application deadlines
+                $(".deadline-datepicker").datepicker({
+                    beforeShowDay: highlightDeadlines,
+                    numberOfMonths: 2
+                }).hide();
+
+                // Toggle datepicker visibility when button is clicked
+                $(".open-datepicker-btn").click(function() {
+                    var pickerId = "#deadline-datepicker-" + $(this).data("id");
+                    $(pickerId).toggle("slide", { direction: "up" }, 300);
+                });
+
+                // Initialize components for first tab on page load
+                var firstPanelId = $(".program-panel:first").attr('id');
+                if (firstPanelId) {
+                    initPanelComponents(firstPanelId);
+                }
+            }
+
+            // Function to highlight application deadlines in the datepicker
+            function highlightDeadlines(date) {
+                // Example deadlines (Fall, Spring, Summer)
+                var fallDeadline = new Date();
+                fallDeadline.setMonth(6); // July
+                fallDeadline.setDate(15);
+
+                var springDeadline = new Date();
+                springDeadline.setMonth(11); // December
+                springDeadline.setDate(1);
+
+                var summerDeadline = new Date();
+                summerDeadline.setMonth(3); // April
+                summerDeadline.setDate(1);
+
+                // Check if the date matches any deadline
+                if (date.getMonth() == fallDeadline.getMonth() && date.getDate() == fallDeadline.getDate()) {
+                    return [true, 'deadline-highlight', 'Fall Application Deadline'];
+                }
+                if (date.getMonth() == springDeadline.getMonth() && date.getDate() == springDeadline.getDate()) {
+                    return [true, 'deadline-highlight', 'Spring Application Deadline'];
+                }
+                if (date.getMonth() == summerDeadline.getMonth() && date.getDate() == summerDeadline.getDate()) {
+                    return [true, 'deadline-highlight', 'Summer Application Deadline'];
+                }
+
+                return [true, ''];
+            }
+
+            // Function to initialize components for each program panel
+            function initPanelComponents(panelId) {
+                // Initialize slider for credits if it exists in this panel
+                if ($("#credits-slider-" + panelId).length) {
+                    // Set up jQuery UI slider for credit selection
+                    $("#credits-slider-" + panelId).slider({
+                        range: "min",
+                        min: 9,
+                        max: 36,
+                        value: 30,
+                        slide: function(event, ui) {
+                            $("#credits-" + panelId).val(ui.value + " credits");
+                            calculateTuition(panelId);
+                        }
+                    });
+
+                    // Set initial values
+                    $("#credits-" + panelId).val($("#credits-slider-" + panelId).slider("value") + " credits");
+
+                    // Add change event for tuition options
+                    $('input[name="tuitionOption-' + panelId + '"]').change(function() {
+                        calculateTuition(panelId);
+                    });
+
+                    // Calculate initial tuition
+                    calculateTuition(panelId);
+                }
+            }
+
+            // Function to calculate tuition based on credits and residency status
+            function calculateTuition(panelId) {
+                var credits = $("#credits-slider-" + panelId).slider("value");
+                var option = $('input[name="tuitionOption-' + panelId + '"]:checked').val();
+
+                // Set rates per credit hour
+                var ratePerCredit = (option === 'inState') ? 1200 : 1800;
+
+                // Calculate total
+                var total = credits * ratePerCredit;
+
+                // Update display
+                $("#tuition-amount-" + panelId).text("$" + total.toLocaleString());
+            }
+        });
+    </script>
+
+    <style>
+        /* Custom styling for the graduate page */
+        .concentration-item {
+            padding: 8px;
+            margin: 5px 0;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: move;
+        }
+
+            .concentration-item .ui-icon {
+                display: inline-block;
+                margin-right: 5px;
+            }
+
+        .ui-state-highlight {
+            height: 2.5em;
+            background-color: #fffacd !important;
+            border: 1px dashed #ccc;
+        }
+
+        .deadline-highlight {
+            background-color: #ffb347 !important;
+            border-radius: 50%;
+        }
+
+        .deadline-datepicker {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .app-step {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+    </style>
+}

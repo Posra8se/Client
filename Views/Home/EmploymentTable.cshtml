@@ -1,0 +1,309 @@
+﻿@model EmploymentTableViewModel
+
+@*
+ * View: EmploymentTable.cshtml
+ * 
+ * Purpose: Displays professional employment information for graduates in a filterable
+ * data table with visualization.
+ * 
+ * Features:
+ * - Interactive chart showing employment distribution by degree
+ * - Filtering options by date range, job title, degree, and city
+ * - Sortable and searchable data table using DataTables.js
+ * - Responsive design for various screen sizes
+ *@
+
+<div class="container mt-4">
+    <h1 class="display-4 mb-3">@Model.employmentTable.title</h1>
+
+    @* Employment Distribution Chart *@
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div id="employment-chart" style="height: 250px;"></div>
+        </div>
+    </div>
+
+    @* Filter Options Section *@
+    <div class="filter-section card mb-3">
+        <div class="card-header bg-primary text-white py-2">
+            <h5 class="mb-0">Filter Options</h5>
+        </div>
+        <div class="card-body py-3">
+            <div class="row g-2">
+                @* Date Range Filter *@
+                <div class="col-md-6 mb-2">
+                    <h6>Filter by Start Date Range</h6>
+                    <div id="date-range-slider" class="mb-2"></div>
+                    <div class="row g-2 mt-1">
+                        <div class="col-6">
+                            <input type="text" id="startDateFilter" class="form-control form-control-sm" readonly>
+                        </div>
+                        <div class="col-6">
+                            <input type="text" id="endDateFilter" class="form-control form-control-sm" readonly>
+                        </div>
+                    </div>
+                </div>
+
+                @* Job Title Filter *@
+                <div class="col-md-6 mb-2">
+                    <h6>Filter by Job Title</h6>
+                    <div class="job-titles-cloud mb-2" style="max-height: 100px; overflow-y: auto;"></div>
+                </div>
+            </div>
+
+            <div class="row g-2 mt-2">
+                @* Degree Filter *@
+                <div class="col-md-6 mb-2">
+                    <h6>Filter by Degree</h6>
+                    <div class="degree-filter-buttons">
+                        <button class="btn btn-sm btn-primary filter-btn mb-1 me-1" data-column="1" data-filter="all">All</button>
+                        @{
+                            var uniqueDegrees = Model.employmentTable.professionalEmploymentInformation
+                            .Select(e => e.degree)
+                            .Distinct()
+                            .OrderBy(d => d);
+
+                            foreach (var degree in uniqueDegrees)
+                            {
+                                <button class="btn btn-sm btn-outline-primary filter-btn mb-1 me-1" data-column="1" data-filter="@degree">@degree</button>
+                            }
+                        }
+                    </div>
+                </div>
+
+                @* City Filter *@
+                <div class="col-md-6 mb-2">
+                    <h6>Filter by City</h6>
+                    <div class="ui-widget mb-2">
+                        <input type="text" id="citySearch" class="form-control form-control-sm" placeholder="Type to search cities...">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Employment Data Table *@
+    <div class="employment-datatable-container">
+        <table id="employmentTable" class="display responsive nowrap compact" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Employer</th>
+                    <th>Degree</th>
+                    <th>City</th>
+                    <th>Title</th>
+                    <th>Start Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var employment in Model.employmentTable.professionalEmploymentInformation)
+                {
+                    <tr>
+                        <td>@employment.employer</td>
+                        <td>@employment.degree</td>
+                        <td>@employment.city</td>
+                        <td>@employment.title</td>
+                        <td data-sort="@GetSortableDate(employment.startDate)">@employment.startDate</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@functions {
+    /// <summary>
+    /// Converts a date string into a sortable format for the data table.
+    /// </summary>
+    /// <param name="date">The date string to convert.</param>
+    /// <returns>A string representation of the date in "yyyy-MM-dd" format if parsing succeeds; otherwise, the original string.</returns>
+    public string GetSortableDate(string date)
+    {
+        // Try to parse date and return a sortable format
+        if (DateTime.TryParse(date, out DateTime parsedDate))
+        {
+            return parsedDate.ToString("yyyy-MM-dd");
+        }
+        return date;
+    }
+}
+
+@section Scripts {
+    <!-- Include DataTables CSS and JS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.dataTables.min.css">
+    <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+
+    <!-- Include Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Initialize DataTable
+            var table = $('#employmentTable').DataTable({
+                responsive: true,
+                order: [[4, 'desc']], // Sort by start date descending by default
+                pageLength: 15,
+                lengthMenu: [[10, 15, 25, 50, -1], [10, 15, 25, 50, "All"]]
+            });
+
+            // Process data for charts
+            var employmentData = @Html.Raw(Json.Serialize(Model.employmentTable.professionalEmploymentInformation));
+
+            // Count job titles for word cloud
+            var titleCounts = {};
+            employmentData.forEach(function(job) {
+                if (titleCounts[job.title]) {
+                    titleCounts[job.title]++;
+                } else {
+                    titleCounts[job.title] = 1;
+                }
+            });
+
+            // Create job title cloud - more compact version
+            var jobTitles = Object.keys(titleCounts).sort(function(a, b) {
+                return titleCounts[b] - titleCounts[a];
+            }).slice(0, 10); // Get top 10 titles instead of 15
+
+            var $cloud = $('.job-titles-cloud');
+            jobTitles.forEach(function(title) {
+                var $tag = $('<span class="badge bg-primary me-1 mb-1" style="cursor:pointer;"></span>')
+                    .text(title + ' (' + titleCounts[title] + ')')
+                    .on('click', function() {
+                        table.column(3).search(title).draw();
+                    });
+
+                $cloud.append($tag);
+            });
+
+            // Count by degree for pie chart
+            var degreeCounts = {};
+            employmentData.forEach(function(job) {
+                if (degreeCounts[job.degree]) {
+                    degreeCounts[job.degree]++;
+                } else {
+                    degreeCounts[job.degree] = 1;
+                }
+            });
+
+            // Create employment chart
+            var ctx = document.getElementById('employment-chart').getContext('2d');
+            var employmentChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(degreeCounts),
+                    datasets: [{
+                        data: Object.values(degreeCounts),
+                        backgroundColor: [
+                            '#4285F4', '#EA4335', '#FBBC05', '#34A853',
+                            '#FF6D01', '#46BDC6', '#7BAAF7', '#F07B72'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 15,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Employment by Degree',
+                            font: {
+                                size: 14
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Create date range slider if there's date data
+            var dates = employmentData.map(function(job) {
+                if (job.startDate) {
+                    return new Date(job.startDate);
+                }
+                return null;
+            }).filter(Boolean);
+
+            if (dates.length > 0) {
+                var minDate = new Date(Math.min.apply(null, dates));
+                var maxDate = new Date(Math.max.apply(null, dates));
+
+                $("#date-range-slider").slider({
+                    range: true,
+                    min: minDate.getTime(),
+                    max: maxDate.getTime(),
+                    values: [minDate.getTime(), maxDate.getTime()],
+                    step: 86400000, // Day in milliseconds
+                    slide: function(event, ui) {
+                        var startDate = new Date(ui.values[0]);
+                        var endDate = new Date(ui.values[1]);
+
+                        $("#startDateFilter").val(startDate.toLocaleDateString());
+                        $("#endDateFilter").val(endDate.toLocaleDateString());
+
+                        // Filter the table based on date range
+                        $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+                            if (!data[4]) return true;
+
+                            var dateStr = data[4];
+                            var rowDate = new Date(dateStr);
+
+                            if (isNaN(rowDate.getTime())) return true;
+
+                            return rowDate >= startDate && rowDate <= endDate;
+                        });
+
+                        table.draw();
+                        $.fn.dataTable.ext.search.pop();
+                    }
+                });
+
+                // Initialize date inputs
+                $("#startDateFilter").val(minDate.toLocaleDateString());
+                $("#endDateFilter").val(maxDate.toLocaleDateString());
+            } else {
+                $("#filter-slider").hide();
+            }
+
+            // Degree filter buttons
+            $('.filter-btn').on('click', function() {
+                var filterValue = $(this).data('filter');
+                var columnIndex = $(this).data('column');
+
+                if (filterValue === 'all') {
+                    table.column(columnIndex).search('').draw();
+                } else {
+                    table.column(columnIndex).search('^' + filterValue + '$', true, false).draw();
+                }
+
+                // Update active button styling
+                $(this).siblings().removeClass('btn-primary').addClass('btn-outline-primary');
+                $(this).removeClass('btn-outline-primary').addClass('btn-primary');
+            });
+
+            // City search
+            $('#citySearch').on('keyup', function() {
+                table.column(2).search(this.value).draw();
+            });
+
+            // Add autocomplete to city search
+            var cities = employmentData.map(function(job) { return job.city; })
+                .filter(function(value, index, self) { return self.indexOf(value) === index; })
+                .filter(Boolean)
+                .sort();
+
+            $("#citySearch").autocomplete({
+                source: cities,
+                minLength: 2
+            });
+        });
+    </script>
+}

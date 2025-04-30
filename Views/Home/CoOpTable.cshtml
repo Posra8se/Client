@@ -1,0 +1,149 @@
+﻿@model CoOpTableViewModel
+
+@*
+ * View: CoOpTable.cshtml
+ * 
+ * Purpose: Displays co-op placement information for students in a filterable
+ * data table.
+ * 
+ * Features:
+ * - Filtering options by degree, term, and city
+ * - Sortable and searchable data table using DataTables.js
+ * - Responsive design for various screen sizes
+ *@
+
+<div class="container mt-4">
+    <h1 class="display-4 mb-3">@Model.coopTable.title</h1>
+
+    @* Filter Options Section *@
+    <div class="filter-section card mb-3">
+        <div class="card-header bg-primary text-white py-2">
+            <h5 class="mb-0">Filter Options</h5>
+        </div>
+        <div class="card-body py-3">
+            <div class="row g-2">
+                @* Degree Filter *@
+                <div class="col-md-4 mb-2">
+                    <h6>Filter by Degree</h6>
+                    <div class="degree-filter-buttons">
+                        <button class="btn btn-sm btn-primary filter-btn mb-1 me-1" data-filter="all">All</button>
+                        @{
+                            var uniqueDegrees = Model.coopTable.coopInformation
+                            .Select(c => c.degree)
+                            .Distinct()
+                            .OrderBy(d => d);
+
+                            foreach (var degree in uniqueDegrees)
+                            {
+                                <button class="btn btn-sm btn-outline-primary filter-btn mb-1 me-1" data-filter="@degree">@degree</button>
+                            }
+                        }
+                    </div>
+                </div>
+
+                @* Term Filter *@
+                <div class="col-md-4 mb-2">
+                    <h6>Filter by Term</h6>
+                    <div class="term-filter-buttons">
+                        <button class="btn btn-sm btn-primary filter-btn mb-1 me-1" data-filter="all">All</button>
+                        @{
+                            var uniqueTerms = Model.coopTable.coopInformation
+                            .Select(c => c.term)
+                            .Distinct()
+                            .OrderBy(t => t);
+
+                            foreach (var term in uniqueTerms)
+                            {
+                                <button class="btn btn-sm btn-outline-primary filter-btn mb-1 me-1" data-filter="@term">@term</button>
+                            }
+                        }
+                    </div>
+                </div>
+
+                @* City Filter *@
+                <div class="col-md-4 mb-2">
+                    <h6>Filter by City</h6>
+                    <div class="ui-widget mb-2">
+                        <input type="text" id="citySearch" class="form-control form-control-sm" placeholder="Type to search cities...">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Co-Op Data Table *@
+    <div class="coop-datatable-container">
+        <table id="coopTable" class="display responsive nowrap compact" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Employer</th>
+                    <th>Degree</th>
+                    <th>City</th>
+                    <th>Term</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var coop in Model.coopTable.coopInformation)
+                {
+                    <tr>
+                        <td>@coop.employer</td>
+                        <td>@coop.degree</td>
+                        <td>@coop.city</td>
+                        <td>@coop.term</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Include DataTables CSS and JS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.dataTables.min.css">
+    <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+
+    <script>
+        // Document Ready Function - Initializes all interactive elements
+        $(document).ready(function() {
+            // Initialize DataTable with responsive features and custom settings
+            var table = $('#coopTable').DataTable({
+                responsive: true,
+                order: [[0, 'asc']], // Default sort by employer name ascending
+                pageLength: 15, // Show 15 entries per page by default
+                lengthMenu: [[10, 15, 25, 50, -1], [10, 15, 25, 50, "All"]] // Available page length options
+            });
+
+            // Set up event handlers for the degree and term filter buttons
+            $('.filter-btn').on('click', function() {
+                var filterValue = $(this).data('filter');
+                // Determine which column to filter based on the parent container
+                var columnIndex = $(this).closest('div').hasClass('degree-filter-buttons') ? 1 : 3;
+
+                // Apply the filter to the appropriate column
+                if (filterValue === 'all') {
+                    table.column(columnIndex).search('').draw();
+                } else {
+                    table.column(columnIndex).search('^' + filterValue + '$', true, false).draw();
+                }
+
+                // Update button styling to show active state
+                $(this).siblings().removeClass('btn-primary').addClass('btn-outline-primary');
+                $(this).removeClass('btn-outline-primary').addClass('btn-primary');
+            });
+
+            // Set up city search functionality
+            $('#citySearch').on('keyup', function() {
+                table.column(2).search(this.value).draw();
+            });
+
+            // Add autocomplete to city search field using jQuery UI
+            var cities = @Json.Serialize(Model.coopTable.coopInformation.Select(c => c.city).Distinct().OrderBy(c => c).ToArray());
+            $("#citySearch").autocomplete({
+                source: cities,
+                minLength: 2 // Start suggesting after 2 characters are typed
+            });
+        });
+    </script>
+}
